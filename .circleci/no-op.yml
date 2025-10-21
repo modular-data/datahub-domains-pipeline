@@ -1,0 +1,22 @@
+version: 2.1
+
+parameters:
+  terraform:
+    description: if set to true will run the workflow
+    type: boolean
+    default: false
+
+jobs:
+  no-op:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run: echo "Readme Change, No Execution Required" && exit 0
+
+workflows:
+  no-op:
+    when: 
+      equal: [ false, << pipeline.parameters.terraform >> ]
+    jobs:
+      - no-op
