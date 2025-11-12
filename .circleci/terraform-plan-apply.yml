@@ -1,0 +1,215 @@
+version: 2.1
+
+orbs:
+  dataworks: modular-data/dataworks-orb@0.0.17
+  slack: circleci/slack@4.12.5
+
+parameters:
+  terraform:
+    description: if set to true will run the workflow
+    type: boolean
+    default: false
+  skip:
+    description: if set to true will skip the workflow
+    type: boolean
+    default: false
+  env_type:  
+    description: Environment Type
+    type: string
+    default: ""
+  environments:
+    description: Set if Env is Deploy Ready
+    type: string
+    default: "development"
+  is_pr:
+    description: Check if the run is a PR
+    type: boolean
+    default: false
+  increment_tag:
+    description: increment_tag to Define if Auto TAG_NEXT
+    type: boolean
+    default: true     
+
+workflows:
+  terraform_development:
+    when: # All must be true to trigger
+      and:
+        - equal: [ true, << pipeline.parameters.terraform >> ]
+        - matches:
+            pattern: ".*dev.*"
+            value: << pipeline.parameters.environments >>                   
+    jobs:
+      - dataworks/terraform_validate_plan:
+          name: terraform_plan_dev
+          state_key: validate.tfstate
+          code_path: .
+          environment: "development"
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              ignore: /.*/
+          context:
+            - hmpps-dataworks-common
+      - slack/on-hold:
+          name: approval-hold-dev
+          channel: dpr_cicd_approvals
+          context:
+            - hmpps-dataworks-common
+          filters:
+            branches:
+              only: main            
+          requires: [terraform_plan_dev]
+      - pause_workflow:
+          name: pause-workflow-dev
+          channel: dpr_cicd_approvals
+          type: approval
+          filters:
+            branches:
+              only: main          
+          context:
+            - hmpps-dataworks-common
+          requires: [approval-hold-dev]
+      - dataworks/terraform_proceed:
+          name: terraform_proceed_dev
+          state_key: validate.tfstate
+          code_path: .
+          environment: "development"
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              ignore: /.*/
+          notify_slack: false
+          context:
+            - hmpps-dataworks-common
+          requires: [pause-workflow-dev, terraform_plan_dev]
+  terraform_test:
+    when: # All must be true to trigger
+      and:
+        - equal: [ true, <<pipeline.parameters.terraform>> ]
+        - equal: [ false, <<pipeline.parameters.is_pr>> ]
+        - matches:
+            pattern: ".*test.*"
+            value: << pipeline.parameters.environments >>
+    jobs:  
+      - dataworks/terraform_validate_plan:
+          name: terraform_plan_test
+          state_key: validate.tfstate
+          code_path: .
+          environment: "test"
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              ignore: /.*/
+          context:
+            - hmpps-dataworks-common
+      - slack/on-hold:
+          name: approval-hold-test
+          channel: dpr_cicd_approvals
+          context:
+            - hmpps-dataworks-common
+          filters:
+            branches:
+              only: main            
+          requires: [terraform_plan_test]
+      - pause_workflow:
+          name: pause-workflow-test
+          channel: dpr_cicd_approvals
+          type: approval
+          filters:
+            branches:
+              only: main          
+          context:
+            - hmpps-dataworks-common
+          requires: [approval-hold-test]
+      - dataworks/terraform_proceed:
+          name: terraform_proceed_test
+          state_key: validate.tfstate
+          code_path: .
+          environment: "test"
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              ignore: /.*/
+          notify_slack: false
+          context:
+            - hmpps-dataworks-common
+          requires: [pause-workflow-test, terraform_plan_test]
+  terraform_preprod:
+    when: # All must be true to trigger
+      and:
+        - equal: [ true, <<pipeline.parameters.terraform>> ]
+        - equal: [ false, <<pipeline.parameters.is_pr>> ]
+        - matches:
+            pattern: ".*preprod.*"
+            value: << pipeline.parameters.environments >>            
+    jobs:
+      - dataworks/terraform_validate_plan:
+          name: terraform_plan_preprod
+          state_key: validate.tfstate
+          code_path: .
+          environment: "preproduction"
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              ignore: /.*/
+          context:
+            - hmpps-dataworks-common
+      - slack/on-hold:
+          name: approval-hold-preprod
+          channel: dpr_cicd_approvals
+          context:
+            - hmpps-dataworks-common
+          filters:
+            branches:
+              only: main            
+          requires: [terraform_plan_preprod]
+      - pause_workflow:
+          name: pause-workflow-preprod
+          channel: dpr_cicd_approvals
+          type: approval
+          filters:
+            branches:
+              only: main          
+          context:
+            - hmpps-dataworks-common
+          requires: [approval-hold-preprod]
+      - dataworks/terraform_proceed:
+          name: terraform_proceed_preprod
+          state_key: validate.tfstate
+          code_path: .
+          environment: "preproduction"
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              ignore: /.*/
+          notify_slack: false
+          context:
+            - hmpps-dataworks-common
+          requires: [pause-workflow-preprod, terraform_plan_preprod]
+  tag-next:        
+    when:
+      and:
+        - equal: [ true, << pipeline.parameters.increment_tag >> ]
+        - equal: [ false, <<pipeline.parameters.is_pr>> ]        
+    jobs:
+      - set-tag:
+          context:
+            - hmpps-dataworks-common      
+
+jobs:
+  set-tag:
+    docker:
+      - image: cimg/base:current
+    resource_class: small  
+    steps:
+      - dataworks/tag_setup
+      - dataworks/tag_set_latest
+      - dataworks/tag_pre_commit:
+          is_precommit: true
+      - dataworks/tag_next
