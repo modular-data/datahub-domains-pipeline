@@ -3,38 +3,27 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
 # VPC and subnet data
+# VPC is now configured via variables (vpc_id)
 data "aws_vpc" "shared" {
-  tags = {
-    "Name" = "${local.business-unit}-${var.environment}"
-  }
+  id = var.vpc_id
 }
 
+# Data subnets - using variables instead of tag-based lookup
 data "aws_subnet" "data_subnets_a" {
-  vpc_id = data.aws_vpc.shared.id
-  tags = {
-    "Name" = "${local.business-unit}-${var.environment}-${local.set}-data-${data.aws_region.current.name}a"
-  }
+  id = length(var.data_subnet_ids) > 0 ? var.data_subnet_ids[0] : var.subnet_ids[0]
 }
 
 data "aws_subnet" "data_subnets_b" {
-  vpc_id = data.aws_vpc.shared.id
-  tags = {
-    "Name" = "${local.business-unit}-${var.environment}-${local.set}-data-${data.aws_region.current.name}b"
-  }
+  id = length(var.data_subnet_ids) > 1 ? var.data_subnet_ids[1] : (length(var.subnet_ids) > 1 ? var.subnet_ids[1] : var.subnet_ids[0])
 }
 
 data "aws_subnet" "data_subnets_c" {
-  vpc_id = data.aws_vpc.shared.id
-  tags = {
-    "Name" = "${local.business-unit}-${var.environment}-${local.set}-data-${data.aws_region.current.name}c"
-  }
+  id = length(var.data_subnet_ids) > 2 ? var.data_subnet_ids[2] : (length(var.subnet_ids) > 2 ? var.subnet_ids[2] : var.subnet_ids[0])
 }
 
+# Private subnets - using variables instead of tag-based lookup
 data "aws_subnet" "private_subnets_a" {
-  vpc_id = data.aws_vpc.shared.id
-  tags = {
-    "Name" = "${local.business-unit}-${var.environment}-${local.set}-private-${data.aws_region.current.name}a"
-  }
+  id = length(var.private_subnet_ids) > 0 ? var.private_subnet_ids[0] : var.subnet_ids[0]
 }
 
 # ECR Repository
@@ -46,11 +35,6 @@ data "aws_ecr_repository" "file_transfer_in_clamav_scanner" {
 # Source Generic lambda ID
 data "aws_security_group" "generic_lambda" {
   vpc_id = data.aws_vpc.shared.id
-
-  filter {
-    name   = "group-name"
-    values = ["dwh-generic-lambda-sg*"]
-  }
 
   filter {
     name   = "tag:Name"

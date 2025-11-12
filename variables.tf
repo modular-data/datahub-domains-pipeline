@@ -51,6 +51,24 @@ variable "vpc_id" {
   default     = ""
 }
 
+variable "subnet_ids" {
+  description = "List of subnet IDs for the VPC (should include subnets in different AZs)"
+  type        = list(string)
+  default     = []
+}
+
+variable "data_subnet_ids" {
+  description = "List of data subnet IDs (typically for data layer resources)"
+  type        = list(string)
+  default     = []
+}
+
+variable "private_subnet_ids" {
+  description = "List of private subnet IDs (typically for private resources)"
+  type        = list(string)
+  default     = []
+}
+
 # Lambdas
 
 variable "artifact_s3_bucket" {

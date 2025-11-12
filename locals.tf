@@ -1,24 +1,14 @@
 locals {
-  project       = "dwh"
-  business-unit = "hmpps"
-  set           = "general"
+  project       = "dataworks"
   account_id    = data.aws_caller_identity.current.account_id
   region        = data.aws_region.current.name
 
   tags = {
     project                = local.project
+    business_unit          = "data-platform"
     environment            = var.environment
-    environment-name       = "digital-prison-reporting-${var.environment}"
-    owner                  = "digitalprisonreporting@digital.justice.gov.uk"
-    application            = "digital-prison-reporting"
-    source-code            = "https://github.com/ministryofjustice/digital-prison-reporting-domains"
-    is-production          = var.environment == "production" ? "true" : "false"
-    business-unit          = local.business-unit
-    infrastructure-support = "digitalprisonreporting@digital.justice.gov.uk"
-    terraform              = true
-    dwh-is-service-bundle  = true
-    dwh-department         = "datahub"
-    set                    = local.set
+    owner                  = "modular-data"
+    application            = "dataworks-domains"
   }
   dps_endpoints  = { for key, value in var.endpoints : key => value if value.setup && startswith(key, "dps") }
   is_dev_or_test = var.environment == "development" || var.environment == "test"

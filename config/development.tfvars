@@ -1,4 +1,28 @@
-environment = "development" 
+environment = "development"
+
+# VPC and Networking
+vpc_id = "vpc-0dba1e33a98b66fea"
+
+# Subnets for the new VPC (eu-west-1)
+subnet_ids = [
+  "subnet-01ec4a4e34cf000c1",  # eu-west-1a
+  "subnet-016203c27632ab6ee",  # eu-west-1b
+  "subnet-03b7cbf7a1f1bcacd"   # eu-west-1c
+]
+
+# Data subnets (if different from general subnets)
+data_subnet_ids = [
+  "subnet-01ec4a4e34cf000c1",  # eu-west-1a
+  "subnet-016203c27632ab6ee",  # eu-west-1b
+  "subnet-03b7cbf7a1f1bcacd"   # eu-west-1c
+]
+
+# Private subnets (if different from general subnets)
+private_subnet_ids = [
+  "subnet-01ec4a4e34cf000c1",  # eu-west-1a
+  "subnet-016203c27632ab6ee",  # eu-west-1b
+  "subnet-03b7cbf7a1f1bcacd"   # eu-west-1c
+]
 
 # Lambda
 setup_step_function_notification_lambda                      = true
