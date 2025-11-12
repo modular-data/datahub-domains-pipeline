@@ -30,10 +30,10 @@ module "setup-dms-endpoints" {
   tags = merge(
     local.tags,
     {
-      dwh-resource-type   = "DMS Endpoint"
-      dwh-jira            = "main"
-      dwh-domain          = "Common"
-      dwh-domain-category = startswith(lower(each.key), "dps") ? "dps" : "nomis"
+      resource-type   = "DMS Endpoint"
+      jira            = "main"
+      domain          = "Common"
+      domain-category = startswith(lower(each.key), "dps") ? "dps" : "nomis"
   })
 
   source_postgres_heartbeat_enable = try(each.value["source_engine"]["heartbeat_enabled"], false)
@@ -66,11 +66,11 @@ module "dms-instance" {
   tags = merge(
     local.tags,
     {
-      dwh-resource-type   = "DMS Instance"
-      dwh-jira            = "DWH2-301"
-      dwh-name            = "${local.project}-dms-${each.key}"
-      dwh-domain          = "Common"
-      dwh-domain-category = "Common"
+      resource-type   = "DMS Instance"
+      jira            = "DWH301"
+      name            = "${local.project}-dms-${each.key}"
+      domain          = "Common"
+      domain-category = "Common"
     }
   )
 }
@@ -107,10 +107,10 @@ module "dms-task" {
   tags = merge(
     local.tags,
     {
-      dwh-resource-type   = "dms"
-      dwh-jira            = "main"
-      dwh-domain          = each.key
-      dwh-domain-category = each.value.domain_type
+      resource-type   = "dms"
+      jira            = "main"
+      domain          = each.key
+      domain-category = each.value.domain_type
     }
   )
 }
@@ -147,10 +147,10 @@ module "dms-cdc-task" {
   tags = merge(
     local.tags,
     {
-      dwh-resource-type   = "dms"
-      dwh-jira            = "DWH2-1925"
-      dwh-domain          = each.key
-      dwh-domain-category = each.value.domain_type
+      resource-type   = "dms"
+      jira            = "DWH1925"
+      domain          = each.key
+      domain-category = each.value.domain_type
     }
   )
 }
@@ -185,10 +185,10 @@ module "lambda-setup" {
   tags = merge(
     local.tags,
     {
-      dwh-resource-type   = "Lambda"
-      dwh-jira            = "main"
-      dwh-domain          = "Common"
-      dwh-domain-category = "Common"
+      resource-type   = "Lambda"
+      jira            = "main"
+      domain          = "Common"
+      domain-category = "Common"
     }
   )
 }
@@ -200,7 +200,7 @@ module "postgres-tickle-lambda" {
 
 
   setup_postgres_tickle_lambda = var.setup_postgres_tickle_lambda
-  postgres_tickle_lambda_name  = "dwh-postgres-tickle"
+  postgres_tickle_lambda_name  = "dataworks-postgres-tickle"
   lambda_code_s3_bucket        = var.artifact_s3_bucket
   lambda_code_s3_key           = var.postgres_tickle_lambda_jar_s3_key
   lambda_log_retention_in_days = var.lambda_log_retention_in_days
@@ -236,6 +236,7 @@ module "reconciliation-jobs" {
   execution_class              = "STANDARD"
   job_name                     = "${local.project}-reconciliation-${each.key}-${var.environment}"
   short_name                   = "${local.project}-reconciliation-${each.key}"
+  glue_version                 = try(each.value.glue_job_version_override, var.glue_job_version)
   temp_dir                     = "s3://${data.aws_s3_bucket.glue.id}/tmp/${local.project}-reconciliation-${each.key}-${var.environment}/"
   spark_event_logs             = "s3://${data.aws_s3_bucket.glue.id}/spark-logs/${local.project}-reconciliation-${each.key}-${var.environment}/"
   enable_spark_ui              = try(each.value.enable_spark_ui_override, var.enable_spark_ui)
@@ -264,7 +265,7 @@ module "reconciliation-jobs" {
       data.aws_secretsmanager_secret.operational_db_secret.arn,
       data.aws_secretsmanager_secret.dps_secret[each.key].arn,
       # The dpr test DB is only available in dev and test environments
-      data.aws_secretsmanager_secret.dwh_secret[0].arn
+      data.aws_secretsmanager_secret.dpr_secret[0].arn
       ] : [
       data.aws_secretsmanager_secret.operational_db_secret.arn,
       data.aws_secretsmanager_secret.dps_secret[each.key].arn
@@ -273,39 +274,39 @@ module "reconciliation-jobs" {
   tags = merge(
     local.tags,
     {
-      dwh-name            = "${local.project}-data-reconciliation-${var.environment}"
-      dwh-jira            = "DWH2-1117"
-      dwh-resource-type   = "Glue Job"
-      dwh-domain          = each.key
-      dwh-domain-category = each.value.domain_type
+      name            = "${local.project}-data-reconciliation-${var.environment}"
+      jira            = "DWH1117"
+      resource-type   = "Glue Job"
+      domain          = each.key
+      domain-category = each.value.domain_type
     }
   )
 
   glue_job_arguments = merge(local.glue_datahub_job_extra_ods_args, {
     "--extra-jars"                                                          = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
-    "--dwh.log.level"                                                       = try(each.value.glue_reconciliation_job_log_level, var.glue_reconciliation_job_log_level)
+    "--dataworks.log.level"                                                       = try(each.value.glue_reconciliation_job_log_level, var.glue_reconciliation_job_log_level)
     "--extra-files"                                                         = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
     "--class"                                                               = "uk.gov.justice.digital.job.DataReconciliationJob"
-    "--dwh.aws.region"                                                      = local.region
-    "--dwh.config.s3.bucket"                                                = data.aws_s3_bucket.glue.id
-    "--dwh.raw.s3.path"                                                     = "s3://${data.aws_s3_bucket.raw.id}/"
-    "--dwh.structured.s3.path"                                              = "s3://${data.aws_s3_bucket.structured.id}/"
-    "--dwh.curated.s3.path"                                                 = "s3://${data.aws_s3_bucket.curated.id}/"
-    "--dwh.raw.archive.s3.path"                                             = "s3://${data.aws_s3_bucket.raw_archive.id}/"
-    "--dwh.contract.registryName"                                           = "${local.project}-schema-registry-${var.environment}"
-    "--dwh.reconciliation.checks.to.run"                                    = "current_state_counts,change_data_counts"
-    "--dwh.config.key"                                                      = each.key
-    "--dwh.dms.replication.task.id"                                         = module.dms-task[each.key].replication_task_id
-    "--dwh.reconciliation.datasource.source.schema.name"                    = each.value.domain_type == local.nomis ? "OMS_OWNER" : "public"
-    "--dwh.reconciliation.datasource.should.uppercase.tablenames"           = each.value.domain_type == local.nomis ? "true" : "false"
-    "--dwh.reconciliation.datasource.glue.connection.name"                  = each.value.domain_type == local.nomis ? data.aws_glue_connection.glue_nomis_connection.name : data.aws_glue_connection.glue_dps_connection[each.key].name
-    "--dwh.reconciliation.fail.job.if.checks.fail"                          = "false"
-    "--dwh.reconciliation.report.results.to.cloudwatch"                     = "true"
-    "--dwh.reconciliation.cloudwatch.metrics.namespace"                     = var.glue_reconciliation_job_metrics_namespace
-    "--dwh.reconciliation.changedatacounts.tolerance.relative.percentage"   = try(each.value.glue_reconciliation_job_changedatacounts_tolerance_relative_percentage, var.glue_reconciliation_job_changedatacounts_tolerance_relative_percentage)
-    "--dwh.reconciliation.changedatacounts.tolerance.absolute"              = try(each.value.glue_reconciliation_job_changedatacounts_tolerance_absolute, var.glue_reconciliation_job_changedatacounts_tolerance_absolute)
-    "--dwh.reconciliation.currentstatecounts.tolerance.relative.percentage" = try(each.value.glue_reconciliation_job_currentstatecounts_tolerance_relative_percentage, var.glue_reconciliation_job_currentstatecounts_tolerance_relative_percentage)
-    "--dwh.reconciliation.currentstatecounts.tolerance.absolute"            = try(each.value.glue_reconciliation_job_currentstatecounts_tolerance_absolute, var.glue_reconciliation_job_currentstatecounts_tolerance_absolute)
+    "--dataworks.aws.region"                                                      = local.region
+    "--dataworks.config.s3.bucket"                                                = data.aws_s3_bucket.glue.id
+    "--dataworks.raw.s3.path"                                                     = "s3://${data.aws_s3_bucket.raw.id}/"
+    "--dataworks.structured.s3.path"                                              = "s3://${data.aws_s3_bucket.structured.id}/"
+    "--dataworks.curated.s3.path"                                                 = "s3://${data.aws_s3_bucket.curated.id}/"
+    "--dataworks.raw.archive.s3.path"                                             = "s3://${data.aws_s3_bucket.raw_archive.id}/"
+    "--dataworks.contract.registryName"                                           = "${local.project}-schema-registry-${var.environment}"
+    "--dataworks.reconciliation.checks.to.run"                                    = "current_state_counts,change_data_counts"
+    "--dataworks.config.key"                                                      = each.key
+    "--dataworks.dms.replication.task.id"                                         = module.dms-task[each.key].replication_task_id
+    "--dataworks.reconciliation.datasource.source.schema.name"                    = each.value.domain_type == local.nomis ? "OMS_OWNER" : "public"
+    "--dataworks.reconciliation.datasource.should.uppercase.tablenames"           = each.value.domain_type == local.nomis ? "true" : "false"
+    "--dataworks.reconciliation.datasource.glue.connection.name"                  = each.value.domain_type == local.nomis ? data.aws_glue_connection.glue_nomis_connection.name : data.aws_glue_connection.glue_dps_connection[each.key].name
+    "--dataworks.reconciliation.fail.job.if.checks.fail"                          = "false"
+    "--dataworks.reconciliation.report.results.to.cloudwatch"                     = "true"
+    "--dataworks.reconciliation.cloudwatch.metrics.namespace"                     = var.glue_reconciliation_job_metrics_namespace
+    "--dataworks.reconciliation.changedatacounts.tolerance.relative.percentage"   = try(each.value.glue_reconciliation_job_changedatacounts_tolerance_relative_percentage, var.glue_reconciliation_job_changedatacounts_tolerance_relative_percentage)
+    "--dataworks.reconciliation.changedatacounts.tolerance.absolute"              = try(each.value.glue_reconciliation_job_changedatacounts_tolerance_absolute, var.glue_reconciliation_job_changedatacounts_tolerance_absolute)
+    "--dataworks.reconciliation.currentstatecounts.tolerance.relative.percentage" = try(each.value.glue_reconciliation_job_currentstatecounts_tolerance_relative_percentage, var.glue_reconciliation_job_currentstatecounts_tolerance_relative_percentage)
+    "--dataworks.reconciliation.currentstatecounts.tolerance.absolute"            = try(each.value.glue_reconciliation_job_currentstatecounts_tolerance_absolute, var.glue_reconciliation_job_currentstatecounts_tolerance_absolute)
   })
 }
 
@@ -336,6 +337,7 @@ module "ingestion-jobs" {
   glue_cdc_create_role                = each.value.glue_cdc_create_role
   glue_cdc_job_name                   = "${local.project}-cdc-${each.key}-${var.environment}"
   glue_cdc_job_short_name             = "${local.project}-cdc-${each.key}"
+  glue_cdc_job_glue_version           = try(each.value.glue_job_version_override, var.glue_job_version)
   glue_cdc_description                = "(Domain, ${each.key}): Monitors the reporting hub for table changes and applies them to structured and curated zones"
   glue_cdc_create_sec_conf            = each.value.glue_cdc_create_sec_conf
   glue_cdc_language                   = "scala"
@@ -358,30 +360,30 @@ module "ingestion-jobs" {
     "--job-bookmark-option"                       = "job-bookmark-disable"
     "--class"                                     = "uk.gov.justice.digital.job.DataHubCdcJob"
     "--datalake-formats"                          = "delta"
-    "--dwh.aws.region"                            = local.region
-    "--dwh.raw.archive.s3.path"                   = "s3://${data.aws_s3_bucket.raw_archive.id}/"
-    "--dwh.raw.s3.path"                           = "s3://${data.aws_s3_bucket.raw.id}/"
-    "--dwh.structured.s3.path"                    = "s3://${data.aws_s3_bucket.structured.id}/"
-    "--dwh.violations.s3.path"                    = "s3://${data.aws_s3_bucket.violations.id}/"
-    "--dwh.curated.s3.path"                       = "s3://${data.aws_s3_bucket.curated.id}/"
-    "--dwh.datastorage.retry.maxAttempts"         = tostring(var.glue_cdc_job_retry_max_attempts)
-    "--dwh.datastorage.retry.minWaitMillis"       = tostring(var.glue_cdc_job_retry_min_wait_millis)
-    "--dwh.datastorage.retry.maxWaitMillis"       = tostring(var.glue_cdc_job_retry_max_wait_millis)
-    "--dwh.spark.broadcast.timeout.seconds"       = try(each.value.glue_cdc_job_spark_broadcast_timeout_seconds, var.glue_cdc_job_spark_broadcast_timeout_seconds)
-    "--dwh.disable.auto.broadcast.join.threshold" = try(each.value.glue_cdc_job_disable_auto_broadcast_join_threshold, var.glue_cdc_job_disable_auto_broadcast_join_threshold)
-    "--dwh.streaming.job.max.files.per.trigger"   = try(each.value.glue_cdc_job_max_files_per_trigger, var.glue_cdc_job_max_files_per_trigger)
-    "--dwh.spark.sql.maxrecordsperfile"           = try(each.value.glue_cdc_job_max_records_per_file, var.glue_cdc_job_max_records_per_file)
+    "--dataworks.aws.region"                            = local.region
+    "--dataworks.raw.archive.s3.path"                   = "s3://${data.aws_s3_bucket.raw_archive.id}/"
+    "--dataworks.raw.s3.path"                           = "s3://${data.aws_s3_bucket.raw.id}/"
+    "--dataworks.structured.s3.path"                    = "s3://${data.aws_s3_bucket.structured.id}/"
+    "--dataworks.violations.s3.path"                    = "s3://${data.aws_s3_bucket.violations.id}/"
+    "--dataworks.curated.s3.path"                       = "s3://${data.aws_s3_bucket.curated.id}/"
+    "--dataworks.datastorage.retry.maxAttempts"         = tostring(var.glue_cdc_job_retry_max_attempts)
+    "--dataworks.datastorage.retry.minWaitMillis"       = tostring(var.glue_cdc_job_retry_min_wait_millis)
+    "--dataworks.datastorage.retry.maxWaitMillis"       = tostring(var.glue_cdc_job_retry_max_wait_millis)
+    "--dataworks.spark.broadcast.timeout.seconds"       = try(each.value.glue_cdc_job_spark_broadcast_timeout_seconds, var.glue_cdc_job_spark_broadcast_timeout_seconds)
+    "--dataworks.disable.auto.broadcast.join.threshold" = try(each.value.glue_cdc_job_disable_auto_broadcast_join_threshold, var.glue_cdc_job_disable_auto_broadcast_join_threshold)
+    "--dataworks.streaming.job.max.files.per.trigger"   = try(each.value.glue_cdc_job_max_files_per_trigger, var.glue_cdc_job_max_files_per_trigger)
+    "--dataworks.spark.sql.maxrecordsperfile"           = try(each.value.glue_cdc_job_max_records_per_file, var.glue_cdc_job_max_records_per_file)
     "--enable-metrics"                            = true
     "--enable-auto-scaling"                       = true
     "--enable-job-insights"                       = true
-    "--dwh.contract.registryName"                 = "${local.project}-schema-registry-${var.environment}"
-    "--dwh.config.s3.bucket"                      = data.aws_s3_bucket.glue.id
-    "--dwh.domain.registry"                       = "${local.project}-domain-registry-${var.environment}"
-    "--dwh.schema.cache.max.size"                 = var.glue_cdc_max_cache_size
-    "--dwh.schema.cache.expiry.minutes"           = var.glue_cdc_cache_expiry_minutes
-    "--dwh.log.level"                             = var.glue_cdc_job_log_level
-    "--dwh.config.s3.bucket"                      = data.aws_s3_bucket.glue.id
-    "--dwh.config.key"                            = each.key
+    "--dataworks.contract.registryName"                 = "${local.project}-schema-registry-${var.environment}"
+    "--dataworks.config.s3.bucket"                      = data.aws_s3_bucket.glue.id
+    "--dataworks.domain.registry"                       = "${local.project}-domain-registry-${var.environment}"
+    "--dataworks.schema.cache.max.size"                 = var.glue_cdc_max_cache_size
+    "--dataworks.schema.cache.expiry.minutes"           = var.glue_cdc_cache_expiry_minutes
+    "--dataworks.log.level"                             = var.glue_cdc_job_log_level
+    "--dataworks.config.s3.bucket"                      = data.aws_s3_bucket.glue.id
+    "--dataworks.config.key"                            = each.key
   })
 
   # BATCH
@@ -389,6 +391,7 @@ module "ingestion-jobs" {
   glue_batch_create_role                = each.value.glue_batch_create_role
   glue_batch_job_name                   = "${local.project}-batch-${each.key}-${var.environment}"
   glue_batch_job_short_name             = "${local.project}-batch-${each.key}"
+  glue_batch_job_glue_version           = try(each.value.glue_job_version_override, var.glue_job_version)
   glue_batch_description                = "Domain, ${each.key}: Applies initial batch load inserts from reporting hub to structured and curated zones"
   glue_batch_create_sec_conf            = each.value.glue_batch_create_sec_conf
   glue_batch_language                   = "scala"
@@ -408,18 +411,18 @@ module "ingestion-jobs" {
     "--extra-files"                         = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
     "--class"                               = "uk.gov.justice.digital.job.DataHubBatchJob"
     "--datalake-formats"                    = "delta"
-    "--dwh.aws.region"                      = local.region
-    "--dwh.raw.s3.path"                     = "s3://${data.aws_s3_bucket.raw.id}/"
-    "--dwh.structured.s3.path"              = "s3://${data.aws_s3_bucket.structured.id}/"
-    "--dwh.violations.s3.path"              = "s3://${data.aws_s3_bucket.violations.id}/"
-    "--dwh.curated.s3.path"                 = "s3://${data.aws_s3_bucket.curated.id}/"
-    "--dwh.contract.registryName"           = "${local.project}-schema-registry-${var.environment}"
-    "--dwh.datastorage.retry.maxAttempts"   = tostring(var.glue_batch_job_retry_max_attempts)
-    "--dwh.datastorage.retry.minWaitMillis" = tostring(var.glue_batch_job_retry_min_wait_millis)
-    "--dwh.datastorage.retry.maxWaitMillis" = tostring(var.glue_batch_job_retry_max_wait_millis)
-    "--dwh.log.level"                       = var.glue_batch_job_log_level
-    "--dwh.config.s3.bucket"                = data.aws_s3_bucket.glue.id
-    "--dwh.config.key"                      = each.key
+    "--dataworks.aws.region"                      = local.region
+    "--dataworks.raw.s3.path"                     = "s3://${data.aws_s3_bucket.raw.id}/"
+    "--dataworks.structured.s3.path"              = "s3://${data.aws_s3_bucket.structured.id}/"
+    "--dataworks.violations.s3.path"              = "s3://${data.aws_s3_bucket.violations.id}/"
+    "--dataworks.curated.s3.path"                 = "s3://${data.aws_s3_bucket.curated.id}/"
+    "--dataworks.contract.registryName"           = "${local.project}-schema-registry-${var.environment}"
+    "--dataworks.datastorage.retry.maxAttempts"   = tostring(var.glue_batch_job_retry_max_attempts)
+    "--dataworks.datastorage.retry.minWaitMillis" = tostring(var.glue_batch_job_retry_min_wait_millis)
+    "--dataworks.datastorage.retry.maxWaitMillis" = tostring(var.glue_batch_job_retry_max_wait_millis)
+    "--dataworks.log.level"                       = var.glue_batch_job_log_level
+    "--dataworks.config.s3.bucket"                = data.aws_s3_bucket.glue.id
+    "--dataworks.config.key"                      = each.key
   })
 
   # Archive
@@ -427,6 +430,7 @@ module "ingestion-jobs" {
   glue_archive_create_role            = each.value.glue_archive_create_role
   glue_archive_job_name               = "${local.project}-archive-${each.key}-${var.environment}"
   glue_archive_job_short_name         = "${local.project}-archive-${each.key}"
+  glue_archive_job_glue_version       = try(each.value.glue_job_version_override, var.glue_job_version)
   glue_archive_description            = "Domain, ${each.key}: Archives processed raw files"
   glue_archive_create_sec_conf        = each.value.glue_archive_create_sec_conf
   glue_archive_language               = "scala"
@@ -440,23 +444,25 @@ module "ingestion-jobs" {
   glue_archive_additional_policies    = module.setup-dms-endpoints[local.nomis].dms_s3_iam_policy_admin_arn
 
   glue_archive_arguments = {
-    "--extra-jars"                           = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
-    "--extra-files"                          = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
-    "--class"                                = "uk.gov.justice.digital.job.RawFileArchiveJob"
-    "--datalake-formats"                     = "delta"
-    "--dwh.aws.region"                       = local.region
-    "--dwh.file.transfer.source.bucket"      = data.aws_s3_bucket.raw.id
-    "--dwh.file.transfer.destination.bucket" = data.aws_s3_bucket.raw_archive.id
-    "--dwh.datastorage.retry.maxAttempts"    = tostring(var.glue_s3_max_attempts)
-    "--dwh.datastorage.retry.minWaitMillis"  = tostring(var.glue_s3_retry_min_wait_millis)
-    "--dwh.datastorage.retry.maxWaitMillis"  = tostring(var.glue_s3_retry_max_wait_millis)
-    "--dwh.raw.file.retention.period.amount" = tostring(var.glue_raw_file_retention_amount)
-    "--dwh.raw.file.retention.period.unit"   = var.glue_raw_file_retention_unit
-    "--dwh.jobs.s3.bucket"                   = data.aws_s3_bucket.glue.id
-    "--checkpoint.location"                  = "s3://${data.aws_s3_bucket.glue.id}/checkpoint/${local.project}-cdc-${each.key}-${var.environment}/"
-    "--dwh.log.level"                        = var.glue_archive_job_log_level
-    "--dwh.config.s3.bucket"                 = data.aws_s3_bucket.glue.id
-    "--dwh.config.key"                       = each.key
+    "--extra-jars"                                = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
+    "--extra-files"                               = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
+    "--class"                                     = "uk.gov.justice.digital.job.RawFileArchiveJob"
+    "--datalake-formats"                          = "delta"
+    "--dataworks.aws.region"                            = local.region
+    "--dataworks.file.transfer.source.bucket"           = data.aws_s3_bucket.raw.id
+    "--dataworks.file.transfer.destination.bucket"      = data.aws_s3_bucket.raw_archive.id
+    "--dataworks.datastorage.retry.maxAttempts"         = tostring(var.glue_s3_max_attempts)
+    "--dataworks.datastorage.retry.minWaitMillis"       = tostring(var.glue_s3_retry_min_wait_millis)
+    "--dataworks.datastorage.retry.maxWaitMillis"       = tostring(var.glue_s3_retry_max_wait_millis)
+    "--dataworks.raw.file.retention.period.amount"      = tostring(var.glue_raw_file_retention_amount)
+    "--dataworks.raw.file.retention.period.unit"        = var.glue_raw_file_retention_unit
+    "--dataworks.file.transfer.use.default.parallelism" = tostring(try(each.value.file_transfer_use_default_parallelism, var.file_transfer_use_default_parallelism))
+    "--dataworks.file.transfer.parallelism"             = tostring(try(each.value.file_transfer_parallelism, var.file_transfer_parallelism))
+    "--dataworks.jobs.s3.bucket"                        = data.aws_s3_bucket.glue.id
+    "--checkpoint.location"                       = "s3://${data.aws_s3_bucket.glue.id}/checkpoint/${local.project}-cdc-${each.key}-${var.environment}/"
+    "--dataworks.log.level"                             = var.glue_archive_job_log_level
+    "--dataworks.config.s3.bucket"                      = data.aws_s3_bucket.glue.id
+    "--dataworks.config.key"                            = each.key
   }
 
   # Unprocessed Raw Files Check
@@ -464,6 +470,7 @@ module "ingestion-jobs" {
   glue_unprocessed_raw_files_check_create_role            = each.value.glue_unprocessed_raw_files_check_create_role
   glue_unprocessed_raw_files_check_job_name               = "pending-files-check-${each.key}-${var.environment}"
   glue_unprocessed_raw_files_check_job_short_name         = "pending-files-check-${each.key}"
+  glue_unprocessed_raw_files_check_job_glue_version       = try(each.value.glue_job_version_override, var.glue_job_version)
   glue_unprocessed_raw_files_check_description            = "Domain, ${each.key}: Check that all raw files have been processed"
   glue_unprocessed_raw_files_check_create_sec_conf        = each.value.glue_unprocessed_raw_files_check_create_sec_conf
   glue_unprocessed_raw_files_check_language               = "scala"
@@ -481,14 +488,14 @@ module "ingestion-jobs" {
     "--extra-files"                         = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
     "--class"                               = "uk.gov.justice.digital.job.UnprocessedRawFilesCheckJob"
     "--checkpoint.location"                 = "s3://${data.aws_s3_bucket.glue.id}/checkpoint/${local.project}-cdc-${each.key}-${var.environment}/"
-    "--dwh.config.s3.bucket"                = data.aws_s3_bucket.glue.id,
-    "--dwh.file.transfer.source.bucket"     = data.aws_s3_bucket.raw.id
-    "--dwh.datastorage.retry.maxAttempts"   = tostring(var.glue_s3_max_attempts)
-    "--dwh.datastorage.retry.minWaitMillis" = tostring(var.glue_s3_retry_min_wait_millis)
-    "--dwh.datastorage.retry.maxWaitMillis" = tostring(var.glue_s3_retry_max_wait_millis)
-    "--dwh.aws.region"                      = local.region
-    "--dwh.log.level"                       = var.glue_unprocessed_raw_files_check_job_log_level
-    "--dwh.config.key"                      = each.key
+    "--dataworks.config.s3.bucket"                = data.aws_s3_bucket.glue.id,
+    "--dataworks.file.transfer.source.bucket"     = data.aws_s3_bucket.raw.id
+    "--dataworks.datastorage.retry.maxAttempts"   = tostring(var.glue_s3_max_attempts)
+    "--dataworks.datastorage.retry.minWaitMillis" = tostring(var.glue_s3_retry_min_wait_millis)
+    "--dataworks.datastorage.retry.maxWaitMillis" = tostring(var.glue_s3_retry_max_wait_millis)
+    "--dataworks.aws.region"                      = local.region
+    "--dataworks.log.level"                       = var.glue_unprocessed_raw_files_check_job_log_level
+    "--dataworks.config.key"                      = each.key
   }
 
   # Create Archive Backfill Job
@@ -496,7 +503,8 @@ module "ingestion-jobs" {
   glue_archive_backfill_job_role                   = try(each.value.enable_archive_backfill, var.enable_archive_backfill)
   glue_archive_backfill_job_name                   = "${local.project}-archive-backfill-${each.key}-${var.environment}"
   glue_archive_backfill_job_short_name             = "${local.project}-archive-backfill-${each.key}"
-  glue_archive_backfill_job_description            = "Creates a copy of the archive data retroactively processed to ensure data consistency without compromising integrity.\nArguments:\n--dwh.raw.archive.s3.path: (Required) Path to the raw archive bucket\n--dwh.temp.reload.s3.path: (Required) Bucket where the backfilled archive will be written to\n--dwh.temp.reload.output.folder: (Required) Folder within the temp reload bucket where the back-filled archive will be written to\n--dwh.config.s3.bucket: (Required) Bucket in which the configs are located\n--dwh.config.key: (Required) The configuration value e.g prisoner\n--dwh.contract.registryName: (Required) Bucket containing the schema contracts\n--dwh.batch.load.fileglobpattern: (Required) The file glob pattern to use"
+  glue_archive_backfill_job_glue_version           = try(each.value.glue_job_version_override, var.glue_job_version)
+  glue_archive_backfill_job_description            = "Creates a copy of the archive data retroactively processed to ensure data consistency without compromising integrity.\nArguments:\n--dataworks.raw.archive.s3.path: (Required) Path to the raw archive bucket\n--dataworks.temp.reload.s3.path: (Required) Bucket where the backfilled archive will be written to\n--dataworks.temp.reload.output.folder: (Required) Folder within the temp reload bucket where the back-filled archive will be written to\n--dataworks.config.s3.bucket: (Required) Bucket in which the configs are located\n--dataworks.config.key: (Required) The configuration value e.g prisoner\n--dataworks.contract.registryName: (Required) Bucket containing the schema contracts\n--dataworks.batch.load.fileglobpattern: (Required) The file glob pattern to use"
   glue_archive_backfill_job_create_sec_conf        = try(each.value.enable_archive_backfill, var.enable_archive_backfill)
   glue_archive_backfill_job_language               = "scala"
   glue_archive_backfill_job_temp_dir               = "s3://${data.aws_s3_bucket.glue.id}/tmp/archive-backfill-${each.key}-${var.environment}/"
@@ -512,15 +520,15 @@ module "ingestion-jobs" {
     "--extra-jars"                     = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
     "--extra-files"                    = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
     "--class"                          = "uk.gov.justice.digital.job.ArchiveBackfillJob"
-    "--dwh.raw.archive.s3.path"        = "s3://${data.aws_s3_bucket.raw_archive.id}/",
-    "--dwh.temp.reload.s3.path"        = "s3://${data.aws_s3_bucket.temp_reload.id}/",
-    "--dwh.config.s3.bucket"           = data.aws_s3_bucket.glue.id
-    "--dwh.config.key"                 = each.key
-    "--dwh.contract.registryName"      = "${local.project}-schema-registry-${var.environment}"
-    "--dwh.batch.load.fileglobpattern" = "*.parquet"
-    "--dwh.temp.reload.output.folder"  = "backfilled-archive",
-    "--dwh.aws.region"                 = local.region
-    "--dwh.log.level"                  = var.glue_archive_backfill_job_log_level
+    "--dataworks.raw.archive.s3.path"        = "s3://${data.aws_s3_bucket.raw_archive.id}/",
+    "--dataworks.temp.reload.s3.path"        = "s3://${data.aws_s3_bucket.temp_reload.id}/",
+    "--dataworks.config.s3.bucket"           = data.aws_s3_bucket.glue.id
+    "--dataworks.config.key"                 = each.key
+    "--dataworks.contract.registryName"      = "${local.project}-schema-registry-${var.environment}"
+    "--dataworks.batch.load.fileglobpattern" = "*.parquet"
+    "--dataworks.temp.reload.output.folder"  = "backfilled-archive",
+    "--dataworks.aws.region"                 = local.region
+    "--dataworks.log.level"                  = var.glue_archive_backfill_job_log_level
   }
 
   # Create Reload Diff Job
@@ -528,7 +536,8 @@ module "ingestion-jobs" {
   glue_create_reload_diff_job_role                   = each.value.glue_create_reload_diff_job_role
   glue_create_reload_diff_job_name                   = "${local.project}-create-reload-diff-${each.key}-${var.environment}"
   glue_create_reload_diff_job_short_name             = "${local.project}-create-reload-diff-${each.key}"
-  glue_create_reload_diff_job_description            = "Creates a Diff Between The Reload and Archive Data.\nArguments:\n--dwh.raw.s3.path: (Required) Path to the raw bucket\n--dwh.raw.archive.s3.path: (Required) Path to the raw archive bucket\n--dwh.temp.reload.s3.path: (Required) Bucket where the diffs will be written to\n--dwh.temp.reload.output.folder: (Required) Folder within the temp reload bucket where the diffs will be written to\n--dwh.config.s3.bucket: (Required) Bucket in which the configs are located\n--dwh.config.key: (Required) The configuration value e.g prisoner\n--dwh.contract.registryName: (Required) Bucket containing the schema contracts\n--dwh.batch.load.fileglobpattern: (Required) The file glob pattern to use"
+  glue_create_reload_diff_job_glue_version           = try(each.value.glue_job_version_override, var.glue_job_version)
+  glue_create_reload_diff_job_description            = "Creates a Diff Between The Reload and Archive Data.\nArguments:\n--dataworks.raw.s3.path: (Required) Path to the raw bucket\n--dataworks.raw.archive.s3.path: (Required) Path to the raw archive bucket\n--dataworks.temp.reload.s3.path: (Required) Bucket where the diffs will be written to\n--dataworks.temp.reload.output.folder: (Required) Folder within the temp reload bucket where the diffs will be written to\n--dataworks.config.s3.bucket: (Required) Bucket in which the configs are located\n--dataworks.config.key: (Required) The configuration value e.g prisoner\n--dataworks.contract.registryName: (Required) Bucket containing the schema contracts\n--dataworks.batch.load.fileglobpattern: (Required) The file glob pattern to use"
   glue_create_reload_diff_job_create_sec_conf        = each.value.glue_create_reload_diff_job_create_sec_conf
   glue_create_reload_diff_job_language               = "scala"
   glue_create_reload_diff_job_temp_dir               = "s3://${data.aws_s3_bucket.glue.id}/tmp/create-reload-diff-${each.key}-${var.environment}/"
@@ -544,27 +553,27 @@ module "ingestion-jobs" {
     "--extra-jars"                     = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
     "--extra-files"                    = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
     "--class"                          = "uk.gov.justice.digital.job.CreateReloadDiffJob"
-    "--dwh.raw.s3.path"                = "s3://${data.aws_s3_bucket.raw.id}/",
-    "--dwh.raw.archive.s3.path"        = "s3://${data.aws_s3_bucket.raw_archive.id}/",
-    "--dwh.temp.reload.s3.path"        = "s3://${data.aws_s3_bucket.temp_reload.id}/",
-    "--dwh.config.s3.bucket"           = data.aws_s3_bucket.glue.id
-    "--dwh.config.key"                 = each.key
-    "--dwh.contract.registryName"      = "${local.project}-schema-registry-${var.environment}"
-    "--dwh.batch.load.fileglobpattern" = "*.parquet"
-    "--dwh.temp.reload.output.folder"  = "diffs",
-    "--dwh.dms.replication.task.id"    = each.value.setup_create_reload_diff_job ? try(module.dms-task[each.key].replication_task_id, null) : null
-    "--dwh.reload.checkpoint.use.now"  = try(each.value.reload_diff_job_checkpoint_use_now_timestamp, false)
-    "--dwh.aws.region"                 = local.region
-    "--dwh.log.level"                  = var.glue_create_reload_diff_job_log_level
+    "--dataworks.raw.s3.path"                = "s3://${data.aws_s3_bucket.raw.id}/",
+    "--dataworks.raw.archive.s3.path"        = "s3://${data.aws_s3_bucket.raw_archive.id}/",
+    "--dataworks.temp.reload.s3.path"        = "s3://${data.aws_s3_bucket.temp_reload.id}/",
+    "--dataworks.config.s3.bucket"           = data.aws_s3_bucket.glue.id
+    "--dataworks.config.key"                 = each.key
+    "--dataworks.contract.registryName"      = "${local.project}-schema-registry-${var.environment}"
+    "--dataworks.batch.load.fileglobpattern" = "*.parquet"
+    "--dataworks.temp.reload.output.folder"  = "diffs",
+    "--dataworks.dms.replication.task.id"    = each.value.setup_create_reload_diff_job ? try(module.dms-task[each.key].replication_task_id, null) : null
+    "--dataworks.reload.checkpoint.use.now"  = try(each.value.reload_diff_job_checkpoint_use_now_timestamp, false)
+    "--dataworks.aws.region"                 = local.region
+    "--dataworks.log.level"                  = var.glue_create_reload_diff_job_log_level
   }
 
   tags = merge(
     local.tags,
     {
-      dwh-resource-type   = "Glue Job"
-      dwh-jira            = "main"
-      dwh-domain          = each.key
-      dwh-domain-category = each.value.domain_type
+      resource-type   = "Glue Job"
+      jira            = "main"
+      domain          = each.key
+      domain-category = each.value.domain_type
     }
   )
 
@@ -616,6 +625,8 @@ module "ingestion-pipeline" {
   s3_glue_bucket_id                            = data.aws_s3_bucket.glue.id
   s3_structured_path                           = "s3://${data.aws_s3_bucket.structured.id}/${each.value.rename_output_space}/"
   s3_curated_path                              = "s3://${data.aws_s3_bucket.curated.id}/${each.value.rename_output_space}/"
+  file_transfer_parallelism                    = try(each.value.file_transfer_parallelism, var.file_transfer_parallelism)
+  file_transfer_use_default_parallelism        = try(each.value.file_transfer_use_default_parallelism, var.file_transfer_use_default_parallelism)
   glue_s3_file_transfer_job                    = "${local.project}-s3-file-transfer-job-${var.environment}"
   glue_s3_data_deletion_job                    = "${local.project}-s3-data-deletion-job-${var.environment}"
   glue_switch_prisons_hive_data_location_job   = "${local.project}-switch-prisons-data-source-${var.environment}"
@@ -649,10 +660,10 @@ module "ingestion-pipeline" {
   tags = merge(
     local.tags,
     {
-      dwh-resource-type   = "Step Function"
-      dwh-jira            = "main"
-      dwh-domain          = each.key
-      dwh-domain-category = each.value.domain_type
+      resource-type   = "Step Function"
+      jira            = "main"
+      domain          = each.key
+      domain-category = each.value.domain_type
     }
   )
 }
@@ -702,6 +713,8 @@ module "reload-pipeline" {
   s3_glue_bucket_id                            = data.aws_s3_bucket.glue.id
   s3_structured_path                           = "s3://${data.aws_s3_bucket.structured.id}/${each.value.rename_output_space}/"
   s3_curated_path                              = "s3://${data.aws_s3_bucket.curated.id}/${each.value.rename_output_space}/"
+  file_transfer_parallelism                    = try(each.value.file_transfer_parallelism, var.file_transfer_parallelism)
+  file_transfer_use_default_parallelism        = try(each.value.file_transfer_use_default_parallelism, var.file_transfer_use_default_parallelism)
   glue_s3_file_transfer_job                    = "${local.project}-s3-file-transfer-job-${var.environment}"
   glue_s3_data_deletion_job                    = "${local.project}-s3-data-deletion-job-${var.environment}"
   glue_switch_prisons_hive_data_location_job   = "${local.project}-switch-prisons-data-source-${var.environment}"
@@ -738,10 +751,10 @@ module "reload-pipeline" {
   tags = merge(
     local.tags,
     {
-      dwh-resource-type   = "Step Function"
-      dwh-jira            = "main"
-      dwh-domain          = each.key
-      dwh-domain-category = each.value.domain_type
+      resource-type   = "Step Function"
+      jira            = "main"
+      domain          = each.key
+      domain-category = each.value.domain_type
     }
   )
 
@@ -778,6 +791,8 @@ module "replay-pipeline" {
   s3_glue_bucket_id                          = data.aws_s3_bucket.glue.id
   s3_structured_path                         = "s3://${data.aws_s3_bucket.structured.id}/${each.value.rename_output_space}/"
   s3_curated_path                            = "s3://${data.aws_s3_bucket.curated.id}/${each.value.rename_output_space}/"
+  file_transfer_parallelism                  = try(each.value.file_transfer_parallelism, var.file_transfer_parallelism)
+  file_transfer_use_default_parallelism      = try(each.value.file_transfer_use_default_parallelism, var.file_transfer_use_default_parallelism)
   glue_s3_file_transfer_job                  = "${local.project}-s3-file-transfer-job-${var.environment}"
   glue_s3_data_deletion_job                  = "${local.project}-s3-data-deletion-job-${var.environment}"
   glue_switch_prisons_hive_data_location_job = "${local.project}-switch-prisons-data-source-${var.environment}"
@@ -806,10 +821,10 @@ module "replay-pipeline" {
   tags = merge(
     local.tags,
     {
-      dwh-resource-type   = "Step Function"
-      dwh-jira            = "main"
-      dwh-domain          = each.key
-      dwh-domain-category = each.value.domain_type
+      resource-type   = "Step Function"
+      jira            = "main"
+      domain          = each.key
+      domain-category = each.value.domain_type
     }
   )
 }
@@ -839,10 +854,10 @@ module "cdc-start-pipeline" {
   tags = merge(
     local.tags,
     {
-      dwh-resource-type   = "Step Function"
-      dwh-jira            = "main"
-      dwh-domain          = each.key
-      dwh-domain-category = each.value.domain_type
+      resource-type   = "Step Function"
+      jira            = "main"
+      domain          = each.key
+      domain-category = each.value.domain_type
     }
   )
 }
@@ -873,10 +888,10 @@ module "cdc-stop-pipeline" {
   tags = merge(
     local.tags,
     {
-      dwh-resource-type   = "Step Function"
-      dwh-jira            = "main"
-      dwh-domain          = each.key
-      dwh-domain-category = each.value.domain_type
+      resource-type   = "Step Function"
+      jira            = "main"
+      domain          = each.key
+      domain-category = each.value.domain_type
     }
   )
 }
@@ -934,10 +949,10 @@ module "maintenance-pipeline" {
   tags = merge(
     local.tags,
     {
-      dwh-resource-type   = "Step Function"
-      dwh-jira            = "main"
-      dwh-domain          = each.key
-      dwh-domain-category = each.value.domain_type
+      resource-type   = "Step Function"
+      jira            = "main"
+      domain          = each.key
+      domain-category = each.value.domain_type
     }
   )
 }
