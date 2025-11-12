@@ -264,11 +264,11 @@ module "reconciliation-jobs" {
     ] : (local.is_dev_or_test ? [
       data.aws_secretsmanager_secret.operational_db_secret.arn,
       data.aws_secretsmanager_secret.dps_secret[each.key].arn,
-      # The dpr test DB is only available in dev and test environments
-      data.aws_secretsmanager_secret.dpr_secret[0].arn
+      # The dwh test DB is only available in dev and test environments
+      data.aws_secretsmanager_secret.dwh_secret[0].arn
       ] : [
       data.aws_secretsmanager_secret.operational_db_secret.arn,
-      data.aws_secretsmanager_secret.dps_secret[each.key].arn
+      data.aws_secretsmanager_secret.dwh_secret[each.key].arn
   ])
 
   tags = merge(
