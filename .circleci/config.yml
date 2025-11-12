@@ -106,7 +106,7 @@ workflows:
     jobs:
       - dataworks/aws_sync_to_s3:
           name: aws_s3_sync_artifacts
-          bucket_prefix: dpr-glue-jobs
+          bucket_prefix: dataworks-glue-jobs
           environments: << pipeline.parameters.environments >>
           filters:
             branches:
