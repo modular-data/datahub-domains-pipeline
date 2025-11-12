@@ -42,7 +42,7 @@ module "setup-dms-endpoints" {
 # DMS Instances
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "dms-instance" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/dms-instance?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/dms-instance?ref=main"
 
   for_each = {
     for k, v in var.instances : k => v
@@ -78,7 +78,7 @@ module "dms-instance" {
 # DMS Task, Specific to Domain (Many Instances)
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "dms-task" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/dms-task?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/dms-task?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -118,7 +118,7 @@ module "dms-task" {
 # DMS Task, Specific to Domain (Many Instances)
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "dms-cdc-task" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/dms-task?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/dms-task?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -158,7 +158,7 @@ module "dms-cdc-task" {
 # Setup Lambda/Triggers, Common Resources
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "lambda-setup" {
-  source                                    = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/pipeline-lambda?ref=main"
+  source                                    = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/pipeline-lambda?ref=main"
   setup_step_function_notification_lambda   = var.setup_step_function_notification_lambda
   step_function_notification_lambda         = var.step_function_notification_lambda
   s3_file_transfer_lambda_code_s3_bucket    = var.artifact_s3_bucket
@@ -196,7 +196,7 @@ module "lambda-setup" {
 # Postgres Tickle Lambda used to ensure the DMS Postgres replication slot on read replicas keeps moving
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "postgres-tickle-lambda" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/postgres-tickle-lambda?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/postgres-tickle-lambda?ref=main"
 
 
   setup_postgres_tickle_lambda = var.setup_postgres_tickle_lambda
@@ -219,7 +219,7 @@ resource "aws_s3_object" "glue_job_shared_custom_log4j_properties" {
 }
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "reconciliation-jobs" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/reconciliation-job?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/reconciliation-job?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -329,7 +329,7 @@ module "ingestion-jobs" {
   enable_spark_ui = try(each.value.enable_spark_ui_override, var.enable_spark_ui) # Common for all Jobs
 
   glue_log_group_retention_in_days = var.glue_log_group_retention_in_days
-  source                           = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/ingestion-jobs?ref=main"
+  source                           = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/ingestion-jobs?ref=main"
 
   # CDC
   setup_cdc_job                       = each.value.setup_cdc_job
@@ -578,7 +578,7 @@ module "ingestion-jobs" {
 #Ingestion Pipeline, Specific to Domain (Many Instances)
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "ingestion-pipeline" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/ingestion-pipeline?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/ingestion-pipeline?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -660,7 +660,7 @@ module "ingestion-pipeline" {
 #Reload Pipeline, Specific to Domain (Many Instances)
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "reload-pipeline" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/reload-pipeline?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/reload-pipeline?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -750,7 +750,7 @@ module "reload-pipeline" {
 #Replay Pipeline, Specific to Domain (Many Instances)
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "replay-pipeline" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/replay-pipeline?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/replay-pipeline?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -817,7 +817,7 @@ module "replay-pipeline" {
 #Pipeline to Start CDC, Specific to Domain (Many Instances)
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "cdc-start-pipeline" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/start-cdc-pipeline?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/start-cdc-pipeline?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -850,7 +850,7 @@ module "cdc-start-pipeline" {
 #Pipeline to Stop CDC, Specific to Domain (Many Instances)
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "cdc-stop-pipeline" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/stop-cdc-pipeline?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/stop-cdc-pipeline?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -884,7 +884,7 @@ module "cdc-stop-pipeline" {
 # Pipeline To Execute Maintenance Jobs Across The Zones, Specific to Domain (Many Instances)
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "maintenance-pipeline" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/maintenance-pipeline?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/maintenance-pipeline?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -946,7 +946,7 @@ module "maintenance-pipeline" {
 #Pipeline Start Triggers, Specific to Domain (Many Instances)
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "pipeline-start-triggers" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/eventbridge_trigger?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/eventbridge_trigger?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -974,7 +974,7 @@ module "pipeline-start-triggers" {
 #Pipeline Stop Triggers, Specific to Domain (Many Instances)
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "pipeline-stop-triggers" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/eventbridge_trigger?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/eventbridge_trigger?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -1002,7 +1002,7 @@ module "pipeline-stop-triggers" {
 # Trigger to Start the Maintenance Pipeline, Specific to Domain (Many Instances)
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "maintenance-pipeline-triggers" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/eventbridge_trigger?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/eventbridge_trigger?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -1030,7 +1030,7 @@ module "maintenance-pipeline-triggers" {
 # Trigger to Start the Ingestion Pipeline, Only Applicable to Batch Only Domains (Many Instances)
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "ingestion-pipeline-triggers" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/eventbridge_trigger?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/eventbridge_trigger?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -1058,7 +1058,7 @@ module "ingestion-pipeline-triggers" {
 # Trigger to Start the Reload Pipeline, Only Applicable to Batch Only Domains (Many Instances)
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "reload-pipeline-triggers" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/eventbridge_trigger?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/eventbridge_trigger?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -1086,7 +1086,7 @@ module "reload-pipeline-triggers" {
 # Trigger Postgres Tickle Lambda (Many Instances)
 # checkov:skip=CKV_TF_1: Commit hash not enforced for legacy module
 module "postgres_tickle_lambda_trigger" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/eventbridge_trigger?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/eventbridge_trigger?ref=main"
 
   for_each = {
     for k, v in var.domains : k => v
@@ -1108,7 +1108,7 @@ module "postgres_tickle_lambda_trigger" {
 
 # Lambda shared by all File Transfer In based domains
 module "landing_zone_antivirus_check_lambda" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/antivirus-check-lambda?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/antivirus-check-lambda?ref=main"
 
   enable                 = var.setup_file_transfer_in_lambdas
   name                   = "${local.project}-landing-zone-antivirus-check"
@@ -1143,7 +1143,7 @@ module "landing_zone_antivirus_check_lambda" {
 }
 
 module "landing_zone_processing_lambda" {
-  source = "git::https://https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/landing-zone-processing-lambda?ref=main"
+  source = "git::https://github.com/modular-data/datahub-tf-service-modules.git//modules/domains/landing-zone-processing-lambda?ref=main"
 
   enable = var.setup_file_transfer_in_lambdas
   name   = "${local.project}-landing-zone-processing"
