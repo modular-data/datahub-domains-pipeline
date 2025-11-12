@@ -47,26 +47,8 @@ variable "cidr" {
 
 variable "vpc_id" {
   type        = string
-  description = "VPC ID for DWH Project"
+  description = "VPC ID for DPR Project"
   default     = ""
-}
-
-variable "subnet_ids" {
-  description = "List of subnet IDs for the VPC (should include subnets in different AZs)"
-  type        = list(string)
-  default     = []
-}
-
-variable "data_subnet_ids" {
-  description = "List of data subnet IDs (typically for data layer resources)"
-  type        = list(string)
-  default     = []
-}
-
-variable "private_subnet_ids" {
-  description = "List of private subnet IDs (typically for private resources)"
-  type        = list(string)
-  default     = []
 }
 
 # Lambdas
@@ -368,6 +350,12 @@ variable "glue_log_group_retention_in_days" {
   default = 7
 }
 
+variable "glue_job_version" {
+  type        = string
+  default     = "4.0"
+  description = "The version of glue to use."
+}
+
 variable "glue_cdc_job_worker_type" {
   type    = string
   default = "G.1X"
@@ -537,6 +525,16 @@ variable "glue_raw_file_retention_amount" {
 variable "glue_raw_file_retention_unit" {
   type    = string
   default = "days"
+}
+
+variable "file_transfer_use_default_parallelism" {
+  type    = bool
+  default = false
+}
+
+variable "file_transfer_parallelism" {
+  type    = number
+  default = 128
 }
 
 # Unprocessed raw Files Check Job
