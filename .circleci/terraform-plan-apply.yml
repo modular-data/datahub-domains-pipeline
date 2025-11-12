@@ -192,15 +192,12 @@ workflows:
           context:
             - hmpps-dataworks-common
           requires: [pause-workflow-preprod, terraform_plan_preprod]
-  tag-next:        
-    when:
-      and:
-        - equal: [ true, << pipeline.parameters.increment_tag >> ]
-        - equal: [ false, <<pipeline.parameters.is_pr>> ]        
+  tag-next:
+    when: false
     jobs:
-      - set-tag:
-          context:
-            - hmpps-dataworks-common      
+    - set-tag:
+        context:
+        - hmpps-dataworks-common  
 
 jobs:
   set-tag:
