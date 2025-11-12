@@ -283,10 +283,10 @@ module "reconciliation-jobs" {
   )
 
   glue_job_arguments = merge(local.glue_datahub_job_extra_ods_args, {
-    "--extra-jars"                                                          = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
+    "--extra-jars"                                                                = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
     "--dataworks.log.level"                                                       = try(each.value.glue_reconciliation_job_log_level, var.glue_reconciliation_job_log_level)
-    "--extra-files"                                                         = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
-    "--class"                                                               = "uk.gov.justice.digital.job.DataReconciliationJob"
+    "--extra-files"                                                               = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
+    "--class"                                                                     = "uk.gov.justice.digital.job.DataReconciliationJob"
     "--dataworks.aws.region"                                                      = local.region
     "--dataworks.config.s3.bucket"                                                = data.aws_s3_bucket.glue.id
     "--dataworks.raw.s3.path"                                                     = "s3://${data.aws_s3_bucket.raw.id}/"
@@ -355,11 +355,11 @@ module "ingestion-jobs" {
   glue_cdc_job_additional_secret_arns = [data.aws_secretsmanager_secret.operational_db_secret.arn]
 
   glue_cdc_arguments = merge(local.glue_datahub_job_extra_ods_args, {
-    "--extra-jars"                                = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
-    "--extra-files"                               = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
-    "--job-bookmark-option"                       = "job-bookmark-disable"
-    "--class"                                     = "uk.gov.justice.digital.job.DataHubCdcJob"
-    "--datalake-formats"                          = "delta"
+    "--extra-jars"                                      = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
+    "--extra-files"                                     = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
+    "--job-bookmark-option"                             = "job-bookmark-disable"
+    "--class"                                           = "uk.gov.justice.digital.job.DataHubCdcJob"
+    "--datalake-formats"                                = "delta"
     "--dataworks.aws.region"                            = local.region
     "--dataworks.raw.archive.s3.path"                   = "s3://${data.aws_s3_bucket.raw_archive.id}/"
     "--dataworks.raw.s3.path"                           = "s3://${data.aws_s3_bucket.raw.id}/"
@@ -373,9 +373,9 @@ module "ingestion-jobs" {
     "--dataworks.disable.auto.broadcast.join.threshold" = try(each.value.glue_cdc_job_disable_auto_broadcast_join_threshold, var.glue_cdc_job_disable_auto_broadcast_join_threshold)
     "--dataworks.streaming.job.max.files.per.trigger"   = try(each.value.glue_cdc_job_max_files_per_trigger, var.glue_cdc_job_max_files_per_trigger)
     "--dataworks.spark.sql.maxrecordsperfile"           = try(each.value.glue_cdc_job_max_records_per_file, var.glue_cdc_job_max_records_per_file)
-    "--enable-metrics"                            = true
-    "--enable-auto-scaling"                       = true
-    "--enable-job-insights"                       = true
+    "--enable-metrics"                                  = true
+    "--enable-auto-scaling"                             = true
+    "--enable-job-insights"                             = true
     "--dataworks.contract.registryName"                 = "${local.project}-schema-registry-${var.environment}"
     "--dataworks.config.s3.bucket"                      = data.aws_s3_bucket.glue.id
     "--dataworks.domain.registry"                       = "${local.project}-domain-registry-${var.environment}"
@@ -407,10 +407,10 @@ module "ingestion-jobs" {
   glue_batch_job_additional_secret_arns = [data.aws_secretsmanager_secret.operational_db_secret.arn]
 
   glue_batch_arguments = merge(local.glue_datahub_job_extra_ods_args, {
-    "--extra-jars"                          = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
-    "--extra-files"                         = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
-    "--class"                               = "uk.gov.justice.digital.job.DataHubBatchJob"
-    "--datalake-formats"                    = "delta"
+    "--extra-jars"                                = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
+    "--extra-files"                               = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
+    "--class"                                     = "uk.gov.justice.digital.job.DataHubBatchJob"
+    "--datalake-formats"                          = "delta"
     "--dataworks.aws.region"                      = local.region
     "--dataworks.raw.s3.path"                     = "s3://${data.aws_s3_bucket.raw.id}/"
     "--dataworks.structured.s3.path"              = "s3://${data.aws_s3_bucket.structured.id}/"
@@ -444,10 +444,10 @@ module "ingestion-jobs" {
   glue_archive_additional_policies    = module.setup-dms-endpoints[local.nomis].dms_s3_iam_policy_admin_arn
 
   glue_archive_arguments = {
-    "--extra-jars"                                = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
-    "--extra-files"                               = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
-    "--class"                                     = "uk.gov.justice.digital.job.RawFileArchiveJob"
-    "--datalake-formats"                          = "delta"
+    "--extra-jars"                                      = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
+    "--extra-files"                                     = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
+    "--class"                                           = "uk.gov.justice.digital.job.RawFileArchiveJob"
+    "--datalake-formats"                                = "delta"
     "--dataworks.aws.region"                            = local.region
     "--dataworks.file.transfer.source.bucket"           = data.aws_s3_bucket.raw.id
     "--dataworks.file.transfer.destination.bucket"      = data.aws_s3_bucket.raw_archive.id
@@ -459,7 +459,7 @@ module "ingestion-jobs" {
     "--dataworks.file.transfer.use.default.parallelism" = tostring(try(each.value.file_transfer_use_default_parallelism, var.file_transfer_use_default_parallelism))
     "--dataworks.file.transfer.parallelism"             = tostring(try(each.value.file_transfer_parallelism, var.file_transfer_parallelism))
     "--dataworks.jobs.s3.bucket"                        = data.aws_s3_bucket.glue.id
-    "--checkpoint.location"                       = "s3://${data.aws_s3_bucket.glue.id}/checkpoint/${local.project}-cdc-${each.key}-${var.environment}/"
+    "--checkpoint.location"                             = "s3://${data.aws_s3_bucket.glue.id}/checkpoint/${local.project}-cdc-${each.key}-${var.environment}/"
     "--dataworks.log.level"                             = var.glue_archive_job_log_level
     "--dataworks.config.s3.bucket"                      = data.aws_s3_bucket.glue.id
     "--dataworks.config.key"                            = each.key
@@ -484,10 +484,10 @@ module "ingestion-jobs" {
   glue_unprocessed_raw_files_check_additional_policies    = module.setup-dms-endpoints[local.nomis].dms_s3_iam_policy_admin_arn
 
   glue_unprocessed_raw_files_check_arguments = {
-    "--extra-jars"                          = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
-    "--extra-files"                         = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
-    "--class"                               = "uk.gov.justice.digital.job.UnprocessedRawFilesCheckJob"
-    "--checkpoint.location"                 = "s3://${data.aws_s3_bucket.glue.id}/checkpoint/${local.project}-cdc-${each.key}-${var.environment}/"
+    "--extra-jars"                                = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
+    "--extra-files"                               = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
+    "--class"                                     = "uk.gov.justice.digital.job.UnprocessedRawFilesCheckJob"
+    "--checkpoint.location"                       = "s3://${data.aws_s3_bucket.glue.id}/checkpoint/${local.project}-cdc-${each.key}-${var.environment}/"
     "--dataworks.config.s3.bucket"                = data.aws_s3_bucket.glue.id,
     "--dataworks.file.transfer.source.bucket"     = data.aws_s3_bucket.raw.id
     "--dataworks.datastorage.retry.maxAttempts"   = tostring(var.glue_s3_max_attempts)
@@ -517,9 +517,9 @@ module "ingestion-jobs" {
   glue_archive_backfill_job_additional_policies    = module.setup-dms-endpoints[local.nomis].dms_s3_iam_policy_admin_arn
 
   glue_archive_backfill_job_arguments = {
-    "--extra-jars"                     = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
-    "--extra-files"                    = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
-    "--class"                          = "uk.gov.justice.digital.job.ArchiveBackfillJob"
+    "--extra-jars"                           = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
+    "--extra-files"                          = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
+    "--class"                                = "uk.gov.justice.digital.job.ArchiveBackfillJob"
     "--dataworks.raw.archive.s3.path"        = "s3://${data.aws_s3_bucket.raw_archive.id}/",
     "--dataworks.temp.reload.s3.path"        = "s3://${data.aws_s3_bucket.temp_reload.id}/",
     "--dataworks.config.s3.bucket"           = data.aws_s3_bucket.glue.id
@@ -550,9 +550,9 @@ module "ingestion-jobs" {
   glue_create_reload_diff_job_additional_policies    = module.setup-dms-endpoints[local.nomis].dms_s3_iam_policy_admin_arn
 
   glue_create_reload_diff_job_arguments = {
-    "--extra-jars"                     = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
-    "--extra-files"                    = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
-    "--class"                          = "uk.gov.justice.digital.job.CreateReloadDiffJob"
+    "--extra-jars"                           = try("s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${each.value.jar_version_override}", "s3://${data.aws_s3_bucket.artifact-store.id}/build-artifacts/digital-prison-reporting-jobs/jars/${var.jar_version}")
+    "--extra-files"                          = "s3://${aws_s3_object.glue_job_shared_custom_log4j_properties.bucket}/${aws_s3_object.glue_job_shared_custom_log4j_properties.key}"
+    "--class"                                = "uk.gov.justice.digital.job.CreateReloadDiffJob"
     "--dataworks.raw.s3.path"                = "s3://${data.aws_s3_bucket.raw.id}/",
     "--dataworks.raw.archive.s3.path"        = "s3://${data.aws_s3_bucket.raw_archive.id}/",
     "--dataworks.temp.reload.s3.path"        = "s3://${data.aws_s3_bucket.temp_reload.id}/",

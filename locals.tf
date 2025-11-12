@@ -1,14 +1,14 @@
 locals {
-  project       = "dataworks"
-  account_id    = data.aws_caller_identity.current.account_id
-  region        = data.aws_region.current.name
+  project    = "dataworks"
+  account_id = data.aws_caller_identity.current.account_id
+  region     = data.aws_region.current.name
 
   tags = {
-    project                = local.project
-    business_unit          = "data-platform"
-    environment            = var.environment
-    owner                  = "modular-data"
-    application            = "dataworks-domains"
+    project       = local.project
+    business_unit = "data-platform"
+    environment   = var.environment
+    owner         = "modular-data"
+    application   = "dataworks-domains"
   }
   dps_endpoints  = { for key, value in var.endpoints : key => value if value.setup && startswith(key, "dps") }
   is_dev_or_test = var.environment == "development" || var.environment == "test"
